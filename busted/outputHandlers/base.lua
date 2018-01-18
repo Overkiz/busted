@@ -175,5 +175,12 @@ return function()
     return nil, true
   end
 
+  handler.getFileName = function(element)
+    if element.trace or element.trace.short_src then
+      return element.trace.short_src:match("([^/]-)%.%a+$")
+    end
+    return element.trace.short_src
+  end
+
   return handler
 end

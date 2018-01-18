@@ -95,7 +95,7 @@ return function(options)
   local getFileLine = function(element)
     local fileline = ''
     if element.trace or element.trace.short_src then
-      fileline = colors.cyan(element.trace.short_src) .. ' @ ' ..
+      fileline = colors.cyan(handler.getFileName(element)) .. ' @ ' ..
                  colors.cyan(element.trace.currentline) .. ': '
     end
     return fileline
