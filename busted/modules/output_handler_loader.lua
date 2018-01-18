@@ -3,15 +3,17 @@ local hasMoon, moonscript = pcall(require, 'moonscript')
 
 return function()
   local loadOutputHandler = function(busted, output, options)
-    local handler
+    local handlers = {}
 
     local success, err = pcall(function()
-      if output:match('%.lua$') then
-        handler = dofile(path.normpath(output))
-      elseif hasMoon and output:match('%.moon$') then
-        handler = moonscript.dofile(path.normpath(output))
-      else
-        handler = require('busted.outputHandlers.' .. output)
+      for word in output:gmatch("%a+") do
+        if word:match('%.lua$') then
+          table.insert(handlers, dofile(path.normpath(word)))
+        elseif hasMoon and word:match('%.moon$') then
+          table.insert(handlers, moonscript.dofile(path.normpath(word)))
+        else
+          table.insert(handlers, require('busted.outputHandlers.' .. word))
+        end
       end
     end)
 
@@ -28,7 +30,9 @@ return function()
       require 'busted.outputHandlers.sound'(options)
     end
 
-    handler(options):subscribe(options)
+    for _, handler in pairs(handlers) do
+      handler(options):subscribe(options)
+    end
   end
 
   return loadOutputHandler
