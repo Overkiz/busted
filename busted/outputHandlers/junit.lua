@@ -83,6 +83,7 @@ return function(options)
       if status ~= 'pending' and parent and parent.randomseed then
         testcase_node:text('Random seed: ' .. parent.randomseed .. '\n')
       end
+
       if message then testcase_node:text(message) end
       if trace and trace.traceback then testcase_node:text(trace.traceback) end
       testcase_node:up()
@@ -141,6 +142,11 @@ return function(options)
     return nil, true
   end
 
+  handler.syslog = function(element, parent, message, trace)
+    testStatus(element, parent, message, 'system-out')
+    return nil, true
+  end
+
   busted.subscribe({ 'exit' }, handler.exit)
   busted.subscribe({ 'suite', 'start' }, handler.suiteStart)
   busted.subscribe({ 'suite', 'end' }, handler.suiteEnd)
@@ -150,6 +156,7 @@ return function(options)
   busted.subscribe({ 'failure', 'it' }, handler.failureTest)
   busted.subscribe({ 'error' }, handler.error)
   busted.subscribe({ 'failure' }, handler.error)
+  busted.subscribe({ 'syslog' }, handler.syslog)
 
   return handler
 end

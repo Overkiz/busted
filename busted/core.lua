@@ -175,6 +175,20 @@ return function()
     local trace, message
     local status = 'success'
 
+    -- Attach log to busted
+    if log then
+      if not busted.log then
+        -- Create instance
+        busted.log = log
+        busted.log:subscribe()
+
+        function busted.log:logger(priority, message)
+          if not busted.log.logs then busted.log.logs = "" end
+          busted.log.logs = busted.log.logs .. message .. "\n"
+        end
+      end
+    end
+
     local ret = { xpcall(run, function(msg)
       status = errortype(msg)
       trace = busted.getTrace(element, 3, msg)
@@ -199,6 +213,20 @@ return function()
       -- failure in a support function (i.e. before_each/after_each or
       -- setup/teardown).
       busted.publish({ status, element.descriptor }, element, busted.context.parent(element), message, trace)
+    end
+
+    if busted.log then
+      -- If busted.log exists then ...
+      if busted.log.logs then
+        -- Publish output if exists
+        busted.publish({ 'syslog' }, element, busted.context.parent(element), busted.log.logs)
+      end
+
+      -- And clear instance, because of multiple contexts/threads
+      busted.log:unsubscribe()
+      busted.log.logs   = nil
+      busted.log.logger = nil
+      busted.log        = nil
     end
     ret[1] = busted.status(status)
 
