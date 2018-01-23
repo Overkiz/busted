@@ -50,6 +50,8 @@ return function(options)
   handler.suiteEnd = function(suite, count, total)
     local suite_xml = top
     suite_xml.xml_doc.attr.time = formatDuration(suite.duration)
+    -- Don't care if POD_SERIAL exists, if hostname is nil, then hostname isn't print
+    suite_xml.xml_doc.attr.hostname = os.getenv("POD_SERIAL")
 
     top = table.remove(stack)
     top.xml_doc.attr.tests = top.xml_doc.attr.tests + suite_xml.xml_doc.attr.tests
