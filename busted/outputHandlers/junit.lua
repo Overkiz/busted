@@ -20,11 +20,37 @@ return function(options)
     output_file_name = options.arguments[1]
   end
 
+  local function getMachine()
+    local machine = "unknown"
+
+    local f = io.open('/etc/machine')
+    if f then
+      machine = f:read()
+      f.close()
+    end
+
+    return machine
+  end
+
+  local function getComponent()
+    local component = os.getenv("PWD")
+
+    _, component = component:match("(/%a+/%a+/)(%a+)")
+
+    if not component then
+      return "unknown"
+    end
+
+    return component
+  end
+
+  local classname = getComponent() .. "." .. getMachine()
+
   handler.suiteStart = function(suite, count, total)
     local suite_xml = {
       start_tick = suite.starttick,
       xml_doc = xml.new('testsuite', {
-        name = 'Run ' .. count .. ' of ' .. total,
+        name = classname,
         tests = 0,
         errors = 0,
         failures = 0,
@@ -94,8 +120,9 @@ return function(options)
 
   handler.testStart = function(element, parent)
     testcase_node = xml.new('testcase', {
-      classname = element.trace.short_src .. ':' .. element.trace.currentline,
+      classname = classname,
       name = handler.getFullName(element),
+      id = handler.getFileName(element),
     })
     top.xml_doc:add_direct_child(testcase_node)
 
