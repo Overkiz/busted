@@ -115,6 +115,8 @@ local function init(busted)
   busted.bindfenv(assert, 'error', busted.fail)
   busted.bindfenv(assert.is_true, 'error', busted.fail)
 
+  require 'busted.ovk'(busted) -- init overkiz async test environment
+
   return busted
 end
 

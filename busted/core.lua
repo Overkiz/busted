@@ -170,7 +170,7 @@ return function()
     end
   end
 
-  function busted.safe(descriptor, run, element)
+  function busted.safe(descriptor, run, element, on_failure)
     busted.context.push(element)
     local trace, message
     local status = 'success'
@@ -193,6 +193,7 @@ return function()
       status = errortype(msg)
       trace = busted.getTrace(element, 3, msg)
       message = busted.rewriteMessage(element, msg, trace)
+      if on_failure then on_failure() end
     end) }
 
     if not ret[1] then
