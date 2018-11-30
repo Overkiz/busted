@@ -45,6 +45,7 @@ build = {
     ['busted.block']                          = 'busted/block.lua',
     ['busted.execute']                        = 'busted/execute.lua',
     ['busted.init']                           = 'busted/init.lua',
+    ['busted.ovk']                            = 'busted/ovk.lua',
 
     ['busted.modules.configuration_loader']   = 'busted/modules/configuration_loader.lua',
     ['busted.modules.luacov']                 = 'busted/modules/luacov.lua',
