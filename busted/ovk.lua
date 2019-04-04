@@ -80,8 +80,10 @@ local function init(busted)
           timer:setTime(Time.Real(Time.Elapsed(0, timeout * 1e6)), true)
           timer:start()
 
+          local test_done = false
           -- add a done() method to environment to set test as finished
           element.env.done = function(user_status, msg)
+            test_done = true
             if user_status == false then
               local message = element.trace.short_src..':'..element.trace.currentline..': '..
                 tostring(msg or 'unspecified failure, use done(false, "failure description")')
@@ -105,7 +107,7 @@ local function init(busted)
           status:update(ret_status)
 
           -- start poller to wait for current async test
-          if busted.overkiz_env.poller then
+          if busted.overkiz_env.poller and not test_done then
             busted.overkiz_env.poller:loop()
           end
 
