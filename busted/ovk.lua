@@ -13,8 +13,6 @@
 local function init(busted)
   local block = require 'busted.block'(busted)
 
-  busted.overkiz_env = {}
-
   local async_it = function(element)
     -- trick: set async_it element.descriptor as it
     -- because output handlers only allows 'failure' inside 'it' block
@@ -40,25 +38,20 @@ local function init(busted)
     if pass then
       local status = busted.status('success')
       if busted.safe_publish('test', { 'test', 'start' }, element, parent) then
-
-        local timer
-        local timed_out = false
-        local pass_async, ancestor_async
-
-        -- check if current env contains a poller, if not, create a new one
-        if not busted.overkiz_env.poller then
-          import 'Overkiz.Poller'
-          busted.overkiz_env.poller = Poller()
-        end
-
-        -- create a timeout timer for current test
+        import 'Overkiz.Poller'
         import 'Overkiz.Time'
         import 'Overkiz.Timer'
-        timer = Timer.Real()
+        import 'Overkiz.Event'
+
+        local timed_out = false
+        local pass_async, ancestor_async
+        local poller = Poller()
+        local timer = Timer.Real() -- create a timeout timer for current test
+        local doneEvent = Event()
 
         function timer:expired()
           timed_out = true
-          busted.overkiz_env.poller:stop()
+          poller:stop()
 
           -- print error message in busted
           local message = element.trace.short_src..':'..element.trace.currentline..': '..'Async test timed out.'
@@ -80,35 +73,50 @@ local function init(busted)
           timer:setTime(Time.Real(Time.Elapsed(0, timeout * 1e6)), true)
           timer:start()
 
+          local done_user_status, done_msg
           local test_done = false
-          -- add a done() method to environment to set test as finished
-          element.env.done = function(user_status, msg)
-            test_done = true
-            if user_status == false then
+
+          doneEvent.receive = function()
+            if done_user_status == false then
               local message = element.trace.short_src..':'..element.trace.currentline..': '..
-                tostring(msg or 'unspecified failure, use done(false, "failure description")')
+                tostring(done_msg or 'unspecified failure, use done(false, "failure description")')
               busted.publish({'failure', element.descriptor }, element, busted.context.parent(element), message, '')
               status:update(busted.status('failure'), message)
             end
 
             block.dexecAll('after_each_async', ancestor_async, true)
             if timer then timer:stop() end
-            if busted.overkiz_env.poller then
-              busted.overkiz_env.poller:stop()
+            if poller then
+              --poller:stop()
             end
+          end
+
+          -- add a done() method to environment to set test as finished
+          element.env.done = function(user_status, msg)
+            done_user_status = user_status
+            done_msg = msg
+            test_done = true
+            doneEvent:send()
           end
 
           -- exec test code
           local ret_status, return_from_test = busted.safe('it', element.run, element, function()
-              if busted.overkiz_env.poller then
-                busted.overkiz_env.poller:stop()
+              if poller then
+                poller:stop()
               end
           end)
           status:update(ret_status)
 
           -- start poller to wait for current async test
-          if busted.overkiz_env.poller and not test_done then
-            busted.overkiz_env.poller:loop()
+          if poller then
+            local remainingWatcher = poller:loop()
+
+            if remainingWatcher > 0 then
+              local message = element.trace.short_src..':'..element.trace.currentline..': '..
+                "At the end of the test, there remained "..tostring(remainingWatcher).." tasks in the poller. This must be fixed."
+              busted.publish({'failure', element.descriptor }, element, busted.context.parent(element), message, '')
+              status:update(busted.status('failure'), message)
+            end
           end
 
           if finally then
