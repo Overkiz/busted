@@ -12,7 +12,7 @@ return function(options)
   local configLoader = require 'busted.modules.configuration_loader'()
 
   -- Default cli arg values
-  local defaultOutput = options.defaultOutput
+  local defaultOutput = options.output or 'utfTerminal'
   local defaultLoaders = 'lua,moonscript'
   local defaultPattern = '_spec'
   local defaultSeed = '/dev/urandom or os.time()'
@@ -124,7 +124,7 @@ return function(options)
   cli:option('-e STATEMENT', 'execute statement STATEMENT', nil, processMultiOption)
   cli:option('-o, --output=LIBRARY', 'output library to load', defaultOutput, processOption)
   cli:option('-C, --directory=DIR', 'change to directory DIR before running tests. If multiple options are specified, each is interpreted relative to the previous one.', './', processDir)
-  cli:option('-f, --config-file=FILE', 'load configuration options from FILE', nil, processOptions)
+  cli:option('-f, --config-file=FILE', 'load configuration options from FILE', nil, processOption)
   cli:option('-t, --tags=TAGS', 'only run tests with these #tags', {}, processList)
   cli:option('--exclude-tags=TAGS', 'do not run tests with these #tags, takes precedence over --tags', {}, processList)
   cli:option('--filter=PATTERN', 'only run test names matching the Lua pattern', {}, processMultiOption)
@@ -168,17 +168,34 @@ return function(options)
     end
 
     -- Load busted config file if available
-    local bustedConfigFilePath = cliArgs.f or path.normpath(path.join(cliArgs.directory, '.busted'))
-    local bustedConfigFile = loadfile(bustedConfigFilePath)
-    if bustedConfigFile then
-      local ok, config = pcall(function()
-        local conf, err = configLoader(bustedConfigFile(), cliArgsParsed, cliArgs)
-        return conf or error(err, 0)
-      end)
-      if not ok then
-        return nil, appName .. ': error: ' .. config
+    local bustedConfigFilePath
+    if cliArgs.f then
+      -- if the file is given, then we require it to exist
+      if not path.isfile(cliArgs.f) then
+        return nil, ("specified config file '%s' not found"):format(cliArgs.f)
+      end
+      bustedConfigFilePath = cliArgs.f
+    else
+      -- try default file
+      bustedConfigFilePath = path.normpath(path.join(cliArgs.directory, '.busted'))
+      if not path.isfile(bustedConfigFilePath) then
+        bustedConfigFilePath = nil  -- clear default file, since it doesn't exist
+      end
+    end
+    if bustedConfigFilePath then
+      local bustedConfigFile, err = loadfile(bustedConfigFilePath)
+      if not bustedConfigFile then
+        return nil, ("failed loading config file `%s`: %s"):format(bustedConfigFilePath, err)
       else
-        cliArgs = config
+        local ok, config = pcall(function()
+          local conf, err = configLoader(bustedConfigFile(), cliArgsParsed, cliArgs)
+          return conf or error(err, 0)
+        end)
+        if not ok then
+          return nil, appName .. ': error: ' .. config
+        else
+          cliArgs = config
+        end
       end
     else
       cliArgs = tablex.merge(cliArgs, cliArgsParsed, true)
