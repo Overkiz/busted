@@ -1,8 +1,8 @@
 package = 'busted'
-version = '2.0.rc12-1'
+version = 'scm-1'
 source = {
-  url = 'https://github.com/Olivine-Labs/busted/archive/v2.0.rc12-1.tar.gz',
-  dir = 'busted-2.0.rc12-1'
+  url = "git://github.com/Olivine-Labs/busted",
+  branch = "master"
 }
 description = {
   summary = 'Elegant Lua unit testing.',
@@ -19,15 +19,15 @@ description = {
 }
 dependencies = {
   'lua >= 5.1',
-  'lua_cliargs = 3.0-1',
+  'lua_cliargs = 3.0',
   'luafilesystem >= 1.5.0',
-  'luasystem >= 0.2.0-0',
+  'luasystem >= 0.2.0',
   'dkjson >= 2.1.0',
-  'say >= 1.3-0',
-  'luassert >= 1.7.8-0',
-  'lua-term >= 0.1-1',
-  'penlight >= 1.3.2-2',
-  'mediator_lua >= 1.1.1-0',
+  'say >= 1.3',
+  'luassert >= 1.7.8',
+  'lua-term >= 0.1',
+  'penlight >= 1.3.2',
+  'mediator_lua >= 1.1.1',
 }
 
 build = {
@@ -49,6 +49,7 @@ build = {
 
     ['busted.modules.configuration_loader']   = 'busted/modules/configuration_loader.lua',
     ['busted.modules.luacov']                 = 'busted/modules/luacov.lua',
+    ['busted.modules.standalone_loader']      = 'busted/modules/standalone_loader.lua',
     ['busted.modules.test_file_loader']       = 'busted/modules/test_file_loader.lua',
     ['busted.modules.output_handler_loader']  = 'busted/modules/output_handler_loader.lua',
     ['busted.modules.helper_loader']          = 'busted/modules/helper_loader.lua',
@@ -79,6 +80,7 @@ build = {
     ['busted.languages.th']                   = 'busted/languages/th.lua',
     ['busted.languages.ua']                   = 'busted/languages/ua.lua',
     ['busted.languages.zh']                   = 'busted/languages/zh.lua',
+    ['busted.languages.it']                   = 'busted/languages/it.lua',
   },
   install = {
     bin = {
